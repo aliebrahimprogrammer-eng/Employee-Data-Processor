@@ -59,4 +59,17 @@ public class EmployeeProcessorService {
         }
     }
 
+    @PreDestroy
+    public void shutdown() {
+        executor.shutdown();
+
+        try {
+            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException exception) {
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
 }
