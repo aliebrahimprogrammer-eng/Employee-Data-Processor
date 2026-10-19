@@ -54,6 +54,28 @@ public class CsvReaderService {
                     String role = columns[4].trim();
                     double completion = Double.parseDouble(columns[5].trim());
 
+                    if (id <= 0) {
+                        throw new IllegalArgumentException("Employee ID must be positive.");
+                    }
+
+                    if (name.isBlank()) {
+                        throw new IllegalArgumentException("Employee name must not be blank.");
+                    }
+
+                    if (salary.signum() < 0) {
+                        throw new IllegalArgumentException("Salary cannot be negative.");
+                    }
+
+                    if (role.isBlank()) {
+                        throw new IllegalArgumentException("Employee role must not be blank.");
+                    }
+
+                    if (!Double.isFinite(completion)
+                            || completion < 0.0 || completion > 1.0) {
+                        throw new IllegalArgumentException(
+                                "Project completion must be between 0.0 and 1.0.");
+                    }
+
                     employees.add(new Employee(
                             id, name, salary, joinedDate, role, completion));
 
