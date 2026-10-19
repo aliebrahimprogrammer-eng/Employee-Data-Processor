@@ -36,6 +36,7 @@ public class EmployeeProcessorService {
     public List<Employee> processEmployees(List<Employee> employees) {
         List<Future<?>> futures = new ArrayList<>();
         List<Employee> results = new ArrayList<>();
+    try {
         for (Employee employee : employees) {
             Future<?> future = executor.submit(() -> {
                 boolean acquired = false;
@@ -69,7 +70,6 @@ public class EmployeeProcessorService {
             futures.add(future);
         }
 
-        try {
             for (Future<?> future : futures) {
                 future.get();
             }
@@ -86,6 +86,13 @@ public class EmployeeProcessorService {
             throw new IllegalStateException(
                     "Failed to process an employee.",
                     exception.getCause());
+
+        } finally {
+            if (futures.stream().anyMatch(future -> !future.isDone())) {
+                for (Future<?> future : futures) {
+                    future.cancel(true);
+                }
+            }
         }
     }
 
