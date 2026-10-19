@@ -11,8 +11,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 public class EmployeeProcessorService {
@@ -27,12 +28,14 @@ public class EmployeeProcessorService {
     private final Semaphore semaphore =
             new Semaphore(MAX_CONCURRENT_PROCESSING);
 
+    private final ReentrantLock resultLock = new ReentrantLock();
     public EmployeeProcessorService(SalaryCalculator salaryCalculator) {
         this.salaryCalculator = salaryCalculator;
     }
 
     public List<Employee> processEmployees(List<Employee> employees) {
         List<Future<?>> futures = new ArrayList<>();
+        List<Employee> results = new ArrayList<>();
         for (Employee employee : employees) {
             Future<?> future = executor.submit(() -> {
                 boolean acquired = false;
@@ -43,6 +46,13 @@ public class EmployeeProcessorService {
 
                     employee.setAdjustedSalary(
                             salaryCalculator.calculateAdjustedSalary(employee));
+
+                    resultLock.lock();
+                    try {
+                        results.add(employee);
+                    } finally {
+                        resultLock.unlock();
+                    }
 
                 } catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();
@@ -64,7 +74,7 @@ public class EmployeeProcessorService {
                 future.get();
             }
 
-            return employees;
+            return results;
 
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
